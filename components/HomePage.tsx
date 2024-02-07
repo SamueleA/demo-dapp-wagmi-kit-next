@@ -5,15 +5,21 @@ import { Box, Button, Text } from '@0xsequence/design-system'
 import { sequence } from '0xsequence'
 import ethers from 'ethers'
 import type { NextPage } from 'next';
-import { useAccount, useNetwork, useConnect, useDisconnect, useSigner, useProvider } from 'wagmi'
+import {
+  useAccount,
+  useChainId,
+  useConnect,
+  useDisconnect,
+  useWalletClient,
+  usePublicClient
+} from 'wagmi'
 
 const Home: NextPage = () => {
-  const { isConnected, address } = useAccount()
-  const { chain } = useNetwork()
-  const { connect, connectors, isLoading } = useConnect()
+  const { isConnected, address, chainId } = useAccount()
+  const { connect, connectors, isPending } = useConnect()
   const { disconnect } = useDisconnect()
-  const provider = useProvider()
-  const { data: signer } = useSigner()
+  const publicClient = usePublicClient()
+  const { data: walletClient } = useWalletClient()
 
   const onConnect = () => {
     const sequenceConnector = connectors.find(connector => connector.id === 'sequence')
@@ -29,7 +35,9 @@ const Home: NextPage = () => {
   }
 
   const onSignMessage = async () => {
-    if (!signer || !provider) return
+    if (!publicClient || !walletClient) {
+      return
+    }
     try {
       const message = `Two roads diverged in a yellow wood,
   Robert Frost poet
@@ -56,13 +64,26 @@ const Home: NextPage = () => {
   Two roads diverged in a wood, and I—
   I took the one less traveled by,
   And that has made all the difference.`
+      
+  
+      const [account] = await walletClient.getAddresses()
   
       // sign
-      const sig = await signer.signMessage(message)
+      const sig = await walletClient.signMessage({
+        message,
+        account
+      })
       console.log('signature:', sig)
   
-      const isValid = await sequence.utils.isValidMessageSignature(await signer.getAddress(), message, sig, provider as ethers.providers.Web3Provider)
+
+      const isValid = await publicClient.verifyMessage({
+        address: account,
+        message,
+        signature: sig
+      })
+
       console.log('isValid?', isValid)
+  
     } catch(e) {
       console.error(e)
     }
@@ -99,13 +120,13 @@ const Home: NextPage = () => {
               Address: {address}
             </Text>
             <Text variant="medium">
-              Connected to network: {chain?.name}
+              Connected to network: {chainId}
             </Text>
           </>
         ) : (
           <Button
-            disabled={isLoading}
-            label={isLoading ? 'Connecting...' : 'Connect'}
+            disabled={isPending}
+            label={isPending ? 'Connecting...' : 'Connect'}
             onClick={onConnect}
           />
         )}
