@@ -1,19 +1,13 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
-import { ThemeProvider } from '@0xsequence/design-system'
-
-import { sequenceWallet } from '@0xsequence/wagmi-connector'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query' 
-
-
-import {
-  createConfig,
-  WagmiProvider as WagmiProviderWrapper,
-  http
-} from 'wagmi';
-import { mainnet, polygon, optimism, arbitrum, polygonMumbai, sepolia, Chain } from '@wagmi/chains'
+import { useState, useEffect } from 'react'
 import { sequence } from '0xsequence'
+import { ThemeProvider } from '@0xsequence/design-system'
+import { getKitConnectWallets } from '@0xsequence/kit'
+import { sequence as sequenceWallet } from '@0xsequence/kit-connectors'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createConfig, http, WagmiProvider as WagmiProviderWrapper } from 'wagmi'
+import { mainnet, polygon, Chain } from 'wagmi/chains'
 
 import '@0xsequence/design-system/styles.css'
 
@@ -24,36 +18,30 @@ interface WagmiProviderProps {
 }
 
 function WagmiProvider({ children }: WagmiProviderProps) {
-  const [mounted, setMounted] = useState(false)
+  // const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true);
-  }, [])
+  // useEffect(() => {
+  //   setMounted(true);
+  // }, [])
 
-  if (!mounted) {
-    return <> </>
-  }
+  // if (!mounted) {
+  //   return <> </>
+  // }
+
+  const chains = [mainnet, polygon] as [Chain, ...Chain[]]
   
-  let walletAppURL = 'https://sequence.app'
+  const projectAccessKey = 'iK0DPkHRt0IFo8o4M3fZIIOAAAAAAAAAA'
 
+  const connectors = getKitConnectWallets(projectAccessKey,
+    [
+      sequenceWallet({
+        connect: {
+          app: 'next app'
+        }
+      })
+    ]
+  )
 
-  const chains = [mainnet, polygon, optimism, arbitrum, polygonMumbai, sepolia] as [Chain, ...Chain[]]
-
-
-  const connectors = [
-    sequenceWallet({
-      defaultNetwork: 137,
-      projectAccessKey: 'iK0DPkHRt0IFo8o4M3fZIIOAAAAAAAAAA',
-      connect: {
-        app: 'Demo-app',
-
-        // This is optional, and only used to point to a custom
-        // environment for the wallet app. By default, it will
-        // point to https://sequence.app/
-        walletAppURL,
-      }
-    })
-  ]
 
   const transports: { [index:number]: any } = {}
 
